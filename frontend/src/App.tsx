@@ -75,6 +75,36 @@ const App: React.FC = () => {
   // 提示词模板编辑器状态
   const [promptEditorVisible, setPromptEditorVisible] = useState(false);
 
+  // 打开标题自定义提示词模态框
+  const handleOpenTitlePromptModal = () => {
+    // 确保topic不为空
+    if (!topic) {
+      message.error('请先输入论文主题');
+      return;
+    }
+    setTitlePromptModalVisible(true);
+  };
+
+  // 打开大纲自定义提示词模态框
+  const handleOpenOutlinePromptModal = () => {
+    // 确保title不为空
+    if (!title) {
+      message.error('请先生成或输入标题');
+      return;
+    }
+    setOutlinePromptModalVisible(true);
+  };
+
+  // 打开提示词模板编辑器
+  const handleOpenPromptEditor = () => {
+    setPromptEditorVisible(true);
+  };
+
+  // 关闭提示词模板编辑器
+  const handleClosePromptEditor = () => {
+    setPromptEditorVisible(false);
+  };
+
   // 加载初始配置
   useEffect(() => {
     const fetchConfig = async () => {
@@ -118,7 +148,7 @@ const App: React.FC = () => {
           titleSuggestions={titleSuggestions}
           onRefreshSuggestions={handleGenerateTitleSuggestions}
           suggestionsLoading={suggestionsLoading}
-          onCustomPrompt={() => setTitlePromptModalVisible(true)}
+          onCustomPrompt={handleOpenTitlePromptModal}
         />
       ),
     },
@@ -131,7 +161,7 @@ const App: React.FC = () => {
           onChange={setOutline} 
           onSubmit={handleGeneratePaper}
           loading={loading}
-          onCustomPrompt={() => setOutlinePromptModalVisible(true)}
+          onCustomPrompt={handleOpenOutlinePromptModal}
         />
       ),
     },
@@ -346,6 +376,16 @@ const App: React.FC = () => {
         const data = await response.json();
         setPaper(data.paper);
         message.success('论文生成成功');
+        
+        // 确保重置后端状态
+        try {
+          await fetch('http://localhost:8000/api/reset-generation-status', {
+            method: 'POST'
+          });
+          console.log('Backend generation status reset successfully after paper generation');
+        } catch (resetError) {
+          console.error('Failed to reset backend generation status:', resetError);
+        }
       } else {
         const errorData = await response.json();
         throw new Error(errorData.detail || errorData.message || JSON.stringify(errorData) || '生成失败');
@@ -353,6 +393,16 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('生成论文失败:', error);
       message.error(`生成论文失败: ${error instanceof Error ? error.message : '请重试'}`);
+      
+      // 出错时也尝试重置状态
+      try {
+        await fetch('http://localhost:8000/api/reset-generation-status', {
+          method: 'POST'
+        });
+        console.log('Backend generation status reset after error');
+      } catch (resetError) {
+        console.error('Failed to reset backend generation status after error:', resetError);
+      }
     } finally {
       setLoading(false);
     }
@@ -378,7 +428,7 @@ const App: React.FC = () => {
     borderRadius: token.borderRadiusLG,
   };
 
-  async function handleGenerateTitleWithCustomPrompt(customPrompt: string) {
+  async function handleGenerateTitleWithCustomPrompt(customPrompt: string, isNewGeneration: boolean) {
     if (!topic) {
       message.error('主题不能为空');
       return;
@@ -399,9 +449,11 @@ const App: React.FC = () => {
         },
         body: JSON.stringify({
           topic,
+          title,
           api_config: apiConfig,
           model_config: modelConfig,
-          custom_prompt: customPrompt
+          custom_prompt: customPrompt,
+          is_new_generation: isNewGeneration
         }),
       });
       
@@ -409,7 +461,7 @@ const App: React.FC = () => {
       
       if (response.ok) {
         setTitle(data.title);
-        message.success('标题已根据自定义要求生成');
+        message.success(isNewGeneration ? '已全新生成标题，格式已统一' : '已在原标题基础上修改，格式已统一');
         setTitlePromptModalVisible(false);
       } else {
         throw new Error(data.detail || data.message || JSON.stringify(data) || '生成失败');
@@ -422,7 +474,7 @@ const App: React.FC = () => {
     }
   }
   
-  async function handleGenerateOutlineWithCustomPrompt(customPrompt: string) {
+  async function handleGenerateOutlineWithCustomPrompt(customPrompt: string, isNewGeneration: boolean) {
     if (!title) {
       message.error('标题不能为空');
       return;
@@ -444,9 +496,11 @@ const App: React.FC = () => {
         body: JSON.stringify({
           topic,
           title,
+          outline,
           api_config: apiConfig,
           model_config: modelConfig,
-          custom_prompt: customPrompt
+          custom_prompt: customPrompt,
+          is_new_generation: isNewGeneration
         }),
       });
       
@@ -454,7 +508,7 @@ const App: React.FC = () => {
       
       if (response.ok) {
         setOutline(data.outline);
-        message.success('大纲已根据自定义要求生成');
+        message.success(isNewGeneration ? '已全新生成大纲，格式已统一' : '已在原大纲基础上修改，格式已统一');
         setOutlinePromptModalVisible(false);
       } else {
         throw new Error(data.detail || data.message || JSON.stringify(data) || '生成失败');
@@ -466,16 +520,6 @@ const App: React.FC = () => {
       setCustomPromptLoading(false);
     }
   }
-
-  // 打开提示词模板编辑器
-  const handleOpenPromptEditor = () => {
-    setPromptEditorVisible(true);
-  };
-  
-  // 关闭提示词模板编辑器
-  const handleClosePromptEditor = () => {
-    setPromptEditorVisible(false);
-  };
 
   return (
     <AntApp>
@@ -490,7 +534,7 @@ const App: React.FC = () => {
           background: token.colorPrimary
         }}>
           <Title level={3} style={{ margin: 0, color: 'white', flex: 1 }}>
-            思想工坊 | ThoughtCraft
+            论文工坊 | ThoughtCraft
           </Title>
           <Button 
             type="text" 

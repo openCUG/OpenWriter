@@ -242,6 +242,80 @@ code {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 大纲层级样式 */
+.outline-item {
+  position: relative;
+  padding: 8px 0;
+  transition: all 0.3s;
+}
+
+.outline-item-level-1 {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1677ff;
+  margin-left: 0;
+  border-left: 3px solid #1677ff;
+  padding-left: 12px;
+  background-color: rgba(22, 119, 255, 0.05);
+}
+
+.outline-item-level-2 {
+  font-weight: 500;
+  font-size: 15px;
+  color: #096dd9;
+  margin-left: 20px;
+  border-left: 2px solid #096dd9;
+  padding-left: 12px;
+  background-color: rgba(9, 109, 217, 0.03);
+}
+
+.outline-item-level-3 {
+  font-weight: 400;
+  font-size: 14px;
+  color: #1890ff;
+  margin-left: 40px;
+  border-left: 1px solid #1890ff;
+  padding-left: 12px;
+}
+
+.outline-item-level-4 {
+  font-weight: 400;
+  font-size: 14px;
+  color: #40a9ff;
+  margin-left: 60px;
+  border-left: 1px dashed #40a9ff;
+  padding-left: 12px;
+}
+
+.outline-item-level-5 {
+  font-weight: 400;
+  font-size: 14px;
+  color: #69c0ff;
+  margin-left: 80px;
+  border-left: 1px dotted #69c0ff;
+  padding-left: 12px;
+}
+
+/* 大纲编辑状态 */
+.outline-item-editing {
+  background-color: #f0f7ff;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 4px 0;
+}
+
+/* 大纲项目悬停效果 */
+.outline-item:hover {
+  background-color: rgba(22, 119, 255, 0.05);
+}
+
+/* 大纲项目编号样式 */
+.outline-item-number {
+  font-weight: 600;
+  margin-right: 8px;
+  color: inherit;
+}
+
 /* 响应式设计优化 */
 @media (max-width: 768px) {
   .ant-layout-content {

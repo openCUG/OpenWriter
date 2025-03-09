@@ -58,6 +58,43 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ value, onChange, onSubmit
     }
   };
 
+  // 确定大纲项的层级
+  const getItemLevel = (item: string): number => {
+    // 检查是否有数字编号格式（如1., 1.1, 1.1.1等）
+    const numberMatch = item.match(/^(\d+\.)+\d*\s/);
+    if (numberMatch) {
+      // 计算点号的数量来确定层级
+      const dots = (numberMatch[0].match(/\./g) || []).length;
+      return dots + 1;
+    }
+    
+    // 检查缩进空格来确定层级
+    const indentMatch = item.match(/^(\s+)/);
+    if (indentMatch) {
+      // 每两个空格算一级缩进
+      return Math.ceil(indentMatch[0].length / 2);
+    }
+    
+    // 检查罗马数字或字母编号
+    if (/^[IVXivx]+\.\s/.test(item)) return 2;
+    if (/^[a-zA-Z]\)\s/.test(item)) return 3;
+    if (/^[a-zA-Z]\.\s/.test(item)) return 2;
+    
+    // 默认为第一级
+    return 1;
+  };
+
+  // 提取项目编号
+  const getItemNumber = (item: string): string => {
+    const match = item.match(/^(\d+\.)+\d*\s|^[IVXivx]+\.\s|^[a-zA-Z]\)\s|^[a-zA-Z]\.\s/);
+    return match ? match[0] : '';
+  };
+
+  // 提取项目内容（不包含编号）
+  const getItemContent = (item: string): string => {
+    return item.replace(/^(\d+\.)+\d*\s|^[IVXivx]+\.\s|^[a-zA-Z]\)\s|^[a-zA-Z]\.\s|\s+/, '').trim();
+  };
+
   return (
     <div>
       <Title level={4}>编辑论文大纲</Title>
@@ -84,43 +121,48 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ value, onChange, onSubmit
           size="small"
           bordered
           dataSource={value}
-          renderItem={(item, index) => (
-            <List.Item
-              actions={[
-                <Button 
-                  type="text" 
-                  icon={<EditOutlined />} 
-                  onClick={() => handleEdit(index)}
-                />,
-                <Button 
-                  type="text" 
-                  danger 
-                  icon={<DeleteOutlined />} 
-                  onClick={() => handleDelete(index)}
-                />
-              ]}
-            >
-              {editingIndex === index ? (
-                <Space>
-                  <TextArea
-                    value={editingValue}
-                    onChange={(e) => setEditingValue(e.target.value)}
-                    autoSize
-                    style={{ width: '100%' }}
+          renderItem={(item, index) => {
+            const level = getItemLevel(item);
+            const itemNumber = getItemNumber(item);
+            const itemContent = getItemContent(item);
+            
+            return (
+              <List.Item
+                className={editingIndex === index ? 'outline-item-editing' : ''}
+                actions={[
+                  <Button 
+                    type="text" 
+                    icon={<EditOutlined />} 
+                    onClick={() => handleEdit(index)}
+                  />,
+                  <Button 
+                    type="text" 
+                    danger 
+                    icon={<DeleteOutlined />} 
+                    onClick={() => handleDelete(index)}
                   />
-                  <Button size="small" type="primary" onClick={handleSaveEdit}>保存</Button>
-                  <Button size="small" onClick={handleCancelEdit}>取消</Button>
-                </Space>
-              ) : (
-                <div style={{ 
-                  paddingLeft: item.startsWith('  ') ? 40 : item.startsWith(' ') ? 20 : 0,
-                  whiteSpace: 'pre-wrap'
-                }}>
-                  {item}
-                </div>
-              )}
-            </List.Item>
-          )}
+                ]}
+              >
+                {editingIndex === index ? (
+                  <Space>
+                    <TextArea
+                      value={editingValue}
+                      onChange={(e) => setEditingValue(e.target.value)}
+                      autoSize
+                      style={{ width: '100%' }}
+                    />
+                    <Button size="small" type="primary" onClick={handleSaveEdit}>保存</Button>
+                    <Button size="small" onClick={handleCancelEdit}>取消</Button>
+                  </Space>
+                ) : (
+                  <div className={`outline-item outline-item-level-${level}`}>
+                    {itemNumber && <span className="outline-item-number">{itemNumber}</span>}
+                    {itemContent}
+                  </div>
+                )}
+              </List.Item>
+            );
+          }}
           footer={
             <div style={{ display: 'flex' }}>
               <TextArea

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Modal, Input, Button, Typography, Space } from 'antd';
-import { EditOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Modal, Input, Button, Typography, Space, Radio, RadioChangeEvent, Alert } from 'antd';
+import { EditOutlined, ThunderboltOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -8,7 +8,7 @@ const { Text } = Typography;
 interface CustomPromptModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (prompt: string) => void;
+  onSubmit: (prompt: string, isNewGeneration: boolean) => void;
   loading: boolean;
   title: string;
   defaultPrompt: string;
@@ -25,9 +25,26 @@ const CustomPromptModal: React.FC<CustomPromptModalProps> = ({
   type
 }) => {
   const [prompt, setPrompt] = useState(defaultPrompt);
+  const [generationType, setGenerationType] = useState<'modify' | 'new'>('modify');
+
+  // 当defaultPrompt变化时更新prompt状态
+  useEffect(() => {
+    setPrompt(defaultPrompt);
+  }, [defaultPrompt]);
+
+  // 当模态框打开时重置生成类型
+  useEffect(() => {
+    if (visible) {
+      setGenerationType('modify');
+    }
+  }, [visible]);
 
   const handleSubmit = () => {
-    onSubmit(prompt);
+    onSubmit(prompt, generationType === 'new');
+  };
+
+  const handleGenerationTypeChange = (e: RadioChangeEvent) => {
+    setGenerationType(e.target.value);
   };
 
   const getPlaceholder = () => {
@@ -46,36 +63,64 @@ const CustomPromptModal: React.FC<CustomPromptModalProps> = ({
     }
   };
 
+  const getFormatTip = () => {
+    if (type === 'title') {
+      return '系统会自动确保生成的标题符合学术规范：专业准确、学术性强、长度适中';
+    } else {
+      return '系统会自动确保大纲符合学术论文结构：包含引言、文献综述、研究方法、结果分析、结论等主要部分，每个部分有详细子目录，并保持格式一致。';
+    }
+  };
+
   return (
     <Modal
       title={<span><EditOutlined /> {title}</span>}
       open={visible}
       onCancel={onClose}
-      footer={[
-        <Button key="back" onClick={onClose}>
-          取消
-        </Button>,
-        <Button 
-          key="submit" 
-          type="primary" 
-          loading={loading} 
-          onClick={handleSubmit}
-          icon={<ThunderboltOutlined />}
-        >
-          生成
-        </Button>
-      ]}
+      footer={
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button key="back" onClick={onClose} style={{ marginRight: 8 }}>
+            取消
+          </Button>
+          <Button 
+            key="submit" 
+            type="primary" 
+            loading={loading} 
+            onClick={handleSubmit}
+            icon={<ThunderboltOutlined />}
+          >
+            生成
+          </Button>
+        </div>
+      }
       width={600}
     >
       <Space direction="vertical" style={{ width: '100%' }}>
         <Text type="secondary">{getDescription()}</Text>
+        
+        <Alert
+          message="格式提示"
+          description={getFormatTip()}
+          type="info"
+          showIcon
+          icon={<InfoCircleOutlined />}
+          style={{ marginTop: 8, marginBottom: 8 }}
+        />
+        
+        <Radio.Group 
+          value={generationType} 
+          onChange={handleGenerationTypeChange}
+          style={{ marginTop: 16, marginBottom: 8 }}
+        >
+          <Radio value="modify">在已生成内容基础上修改</Radio>
+          <Radio value="new">全新生成</Radio>
+        </Radio.Group>
         
         <TextArea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={getPlaceholder()}
           autoSize={{ minRows: 4, maxRows: 8 }}
-          style={{ marginTop: 16, marginBottom: 16 }}
+          style={{ marginTop: 8, marginBottom: 16 }}
         />
         
         <Text type="secondary" style={{ fontSize: '12px' }}>
