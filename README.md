@@ -11,11 +11,10 @@
 
 
 
-![main](imgs/main.jpg)
+![main](imgs/main.png)
 
-![main](imgs/outline.jpg)
 
-![main](imgs/text.jpg)
+![main](imgs/text.png)
 
 
 ## 🌟 功能特点
@@ -48,8 +47,8 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/oaeen/llm_writers.git
-cd llm_writers
+git clone https://github.com/openCUG/OpenWriter.git
+cd OpenWriter
 ```
 
 ### 2. 配置环境变量
